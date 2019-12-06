@@ -92,6 +92,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.3.5"
+  extended_nested_scroll_view:
+    dependency: "direct main"
+    description:
+      name: extended_nested_scroll_view
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.8"
   flutter:
     dependency: "direct main"
     description: flutter

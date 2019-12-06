@@ -5,7 +5,10 @@ import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:alipay_fluttur/ui/widgets/load_image.dart';
 import 'package:alipay_fluttur/ui/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyrefresh/easy_refresh.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
+
 
 const APPBAR_SCROLL_OFFSET = 50;
 
@@ -15,8 +18,9 @@ class SalePage extends StatefulWidget {
 }
 
 class _SalePageState extends State<SalePage> {
-  double expandedHeight = 400;
+  double expandedHeight = 340;
   double appBarAlpha = 0;
+  RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   List<Message> messageList = [
     Message(title: '余额宝收益到账啦', time: '3小时前', read: true),
@@ -40,7 +44,13 @@ class _SalePageState extends State<SalePage> {
     setState(() {
       appBarAlpha = alpha;
     });
-    print(appBarAlpha);
+    print(offset);
+  }
+
+  Future<void>  _onRefresh(){
+    print('_onRefresh');
+    _refreshController.refreshCompleted();
+    return null;
   }
 
   @override
@@ -74,43 +84,44 @@ class _SalePageState extends State<SalePage> {
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: Container(
-                    color: Colors.red,
-                    child: Column(
-                      children: <Widget>[
-                        _divide(),
-                        _homeMessage(rpx),
-                        _divide(),
-                        _buildSwiper(rpx),
-                        _divide(),
-                        Container(
-                          height: 500.0,
-                          color: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 25 * rpx, vertical: 30 * rpx),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              _buildTitle(rpx, '惠支付'),
-                              _card(
-                                  child: Container(
-                                    height: 100,
-                                    color: Colors.white,
-                                    child: Text('我是card'),
-                                  )),
-                              _buildTitle(rpx, '生活服务'),
-                              _card(
-                                  child: Container(
-                                    height: 100,
-                                    color: Colors.white,
-                                    child: Text('我是card'),
-                                  )),
-                            ],
-                          ),
-                        )
-                      ],
+
+                    child: Container(
+                      color: Colors.red,
+                      child: Column(
+                        children: <Widget>[
+                          _divide(),
+                          _homeMessage(rpx),
+                          _divide(),
+                          _buildSwiper(rpx),
+                          _divide(),
+                          Container(
+                            height: 500.0,
+                            color: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 25 * rpx, vertical: 30 * rpx),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                _buildTitle(rpx, '惠支付'),
+                                _card(
+                                    child: Container(
+                                      height: 100,
+                                      color: Colors.white,
+                                      child: Text('我是card'),
+                                    )),
+                                _buildTitle(rpx, '生活服务'),
+                                _card(
+                                    child: Container(
+                                      height: 100,
+                                      color: Colors.white,
+                                      child: Text('我是card'),
+                                    )),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
                 ),
               ],
             ),
@@ -414,39 +425,50 @@ class _TopHeaderState extends State<TopHeader> {
       child: Column(
         children: <Widget>[
           Container(
-            margin: EdgeInsets.only(
-                top: marginTop),
+            margin: EdgeInsets.only(top: marginTop),
             height: 180 * rpx,
             color: Colours.app_main,
             child: _headerMenu(rpx),
           ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              height: 300 * rpx,
-              color: Colors.white,
+          Container(
+            height: 330.0 *rpx,
+            color: Colors.white,
+//            padding: EdgeInsets.symmetric(vertical: 15*rpx),
+            child: Center(
+              child: GridView.count(
+                padding: EdgeInsets.all(0),
+                shrinkWrap: true,
+                crossAxisCount: 4,
+                crossAxisSpacing: 10.0 * rpx,
+                mainAxisSpacing: 10.0 * rpx,
+                childAspectRatio: 2,
+                children: navList.map((nav){
+                  return getItemContainer(nav);
+                }).toList(),
+              ),
             ),
           ),
-//          Container(
-//            color: Colors.white,
-//            height: 300 * rpx,
-//            child: FractionallySizedBox(
-//              widthFactor: 1,
-//              heightFactor: 1,
-//              child: Text('导航'),
-//            )
-//            GridView.count(
-//              physics: NeverScrollableScrollPhysics(),
-//              crossAxisCount: 4,
-//              shrinkWrap: true,
-////              crossAxisSpacing: 10.0,
-//              mainAxisSpacing: 10.0,
-//              childAspectRatio: 1.5,
-//              children: navList.map((nav){
-//                return getItemContainer(nav);
-//              }).toList(),
+//          Expanded(
+//            flex: 1,
+//            child: Container(
+//              padding: EdgeInsets.only(top: 44 *rpx),
+//              color: Colors.white,
+//              child: Center(
+//                child: GridView.count(
+//                  padding: EdgeInsets.all(0),
+//                  shrinkWrap: true,
+//                  crossAxisCount: 4,
+//                  crossAxisSpacing: 10.0 * rpx,
+//                  mainAxisSpacing: 10.0 * rpx,
+//                  childAspectRatio: 2,
+//                  children: navList.map((nav){
+//                    return getItemContainer(nav);
+//                  }).toList(),
+//                ),
+//              ),
 //            ),
 //          ),
+
         ],
       ),
     );
@@ -552,7 +574,6 @@ class _TopHeaderState extends State<TopHeader> {
 
   Widget getItemContainer(NavItem item) {
     return Container(
-      color: Colors.greenAccent,
       child: Column(
         children: <Widget>[
           Icon(
@@ -597,7 +618,8 @@ class _TopHeaderWithCallbackState extends State<TopHeaderWithCallback>
     double height =
         box.getMaxIntrinsicHeight(MediaQuery.of(context).size.width);
     print('after----$height');
-    widget.updateHeight(height);
+    /// 不知道为啥多出44
+    widget.updateHeight(height - 44);
   }
 }
 
