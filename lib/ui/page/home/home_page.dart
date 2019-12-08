@@ -18,17 +18,7 @@ class HomePage extends StatefulWidget {
   }
 }
 class HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
-  // 滚动控制器
-  ScrollController _scrollController;
-  // Tab控制器
-  TabController _tabController;
-  int _tabIndex = 0;
-  // 列表
-  int _listCount = 20;
-  // 表格
-  int _gridCount = 30;
-
+    with AutomaticKeepAliveClientMixin {
 
   double expandedHeight = 340;
   double appBarAlpha = 0;
@@ -67,15 +57,11 @@ class HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _scrollController = ScrollController();
   }
 
   @override
   void dispose() {
     super.dispose();
-    _tabController.dispose();
-    _scrollController.dispose();
   }
 
   @override
@@ -112,7 +98,7 @@ class HomePageState extends State<HomePage>
                 ];
               },
               body: IndexedStack(
-                index: _tabIndex,
+                index: 0,
                 children: <Widget>[
                   extended.NestedScrollViewInnerScrollPositionKeyWidget(
                     Key('Tab0'),
@@ -159,21 +145,18 @@ class HomePageState extends State<HomePage>
                             ),
                           );
                         },
-                        itemCount: _listCount,
+                        itemCount: 1,
                       ),
                       onRefresh: () async {
                         print('onRefresh-------');
                         await Future.delayed(Duration(seconds: 2), () {
                           setState(() {
-                            _listCount = 20;
                           });
                         });
                       },
                       onLoad: () async {
                         await Future.delayed(Duration(seconds: 2), () {
-                          setState(() {
-                            _listCount += 10;
-                          });
+
                         });
                       },
                     ),
@@ -435,6 +418,10 @@ class HomePageState extends State<HomePage>
       child: child,
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
 
 
