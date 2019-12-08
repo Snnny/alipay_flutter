@@ -49,81 +49,96 @@ class SalePageState extends State<SalePage> {
     });
   }
 
+  /// 手指抬起事件
+  _handleUp(pos) {
+    double _scrollY = controller.position.pixels;
+    if(_scrollY > 0 && _scrollY < _offsetY) {
+      if(_scrollY > 60) {
+        controller.position.animateTo(_offsetY, duration: Duration(milliseconds: 100),curve: Curves.ease);
+      } else {
+        controller.position.animateTo(0, duration: Duration(milliseconds: 100),curve: Curves.ease);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double rpx = MediaQuery.of(context).size.width / 750;
 
     return Scaffold(
-      body: CustomScrollView(
-        controller: controller,
-        slivers: <Widget>[
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: expandedHeight,
-            title: Text('财富'),
-            leading: Icon(
-              PAYICons.ke_fu,
-              color: Colors.white,
-            ),
-            actions: <Widget>[
-              IconButton(
-                  icon: Icon(
-                    Icons.search,
-                    color: Colors.white,
-                  ),
-                  onPressed: null)
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: TopHeaderCallback(
-                controller: controller,
-                updateHeight: updateExpandedHeight,
-                secret: secret,
-                changeSecret: changeSecret,
+      body: Listener(
+        onPointerUp: _handleUp,
+        child: CustomScrollView(
+          controller: controller,
+          slivers: <Widget>[
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: expandedHeight,
+              title: Text('财富'),
+              leading: Icon(
+                PAYICons.ke_fu,
+                color: Colors.white,
               ),
-              collapseMode: CollapseMode.none,
+              actions: <Widget>[
+                IconButton(
+                    icon: Icon(
+                      Icons.search,
+                      color: Colors.white,
+                    ),
+                    onPressed: null)
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: TopHeaderCallback(
+                  controller: controller,
+                  updateHeight: updateExpandedHeight,
+                  secret: secret,
+                  changeSecret: changeSecret,
+                ),
+                collapseMode: CollapseMode.none,
+              ),
             ),
-          ),
-          SliverGrid(
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200.0,
-              mainAxisSpacing: 10.0,
-              crossAxisSpacing: 10.0,
-              childAspectRatio: 3.0, //子控件宽高比
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return Card(
-                  child: Container(
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.all(10),
-                    child: Text('data $index'),
-                  ),
-                );
-              },
-              childCount: 20,
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildListDelegate(
-              //返回组件集合
-              List.generate(20, (int index) {
-                //返回 组件
-                return GestureDetector(
-                  onTap: () {
-                    print("点击$index");
-                  },
-                  child: Card(
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200.0,
+                mainAxisSpacing: 10.0,
+                crossAxisSpacing: 10.0,
+                childAspectRatio: 3.0, //子控件宽高比
+              ),
+              delegate: SliverChildBuilderDelegate(
+                    (BuildContext context, int index) {
+                  return Card(
                     child: Container(
                       alignment: Alignment.centerLeft,
                       padding: EdgeInsets.all(10),
                       child: Text('data $index'),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+                childCount: 20,
+              ),
             ),
-          ),
-        ],
+            SliverList(
+              delegate: SliverChildListDelegate(
+                //返回组件集合
+                List.generate(20, (int index) {
+                  //返回 组件
+                  return GestureDetector(
+                    onTap: () {
+                      print("点击$index");
+                    },
+                    child: Card(
+                      child: Container(
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.all(10),
+                        child: Text('data $index'),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -324,7 +339,7 @@ class _TopHeaderState extends State<TopHeader> {
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Transform.rotate(
-                  angle: 3.14 * _angle,
+                  angle: pi * _angle,
                   child: Icon(
                     Icons.keyboard_arrow_up,
                     color: Colours.app_main_light,
