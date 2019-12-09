@@ -1,378 +1,249 @@
-import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:flutter_easyrefresh/easy_refresh.dart';
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart' as extended;
+
 import 'package:after_layout/after_layout.dart';
-import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:alipay_fluttur/ui/widgets/load_image.dart';
-import 'package:alipay_fluttur/ui/widgets/search_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 
-const APPBAR_SCROLL_OFFSET = 50;
-/// NestedScrollView示例页面
 class WealthPage extends StatefulWidget {
   @override
-  WealthPageState createState() {
+  State<StatefulWidget> createState() {
     return WealthPageState();
   }
 }
-class WealthPageState extends State<WealthPage>
-    with SingleTickerProviderStateMixin {
-  // 滚动控制器
-  ScrollController _scrollController;
-  // Tab控制器
-  TabController _tabController;
-  int _tabIndex = 0;
-  // 列表
-  int _listCount = 20;
-  // 表格
-  int _gridCount = 30;
 
+class WealthPageState extends State<WealthPage> with AutomaticKeepAliveClientMixin {
+  ScrollController controller;
 
-  double expandedHeight = 340;
-  double appBarAlpha = 0;
-  bool hideTopBar = true;
+  double _offsetY = 130;
+  double expandedHeight = 300;
+  bool secret = false;
 
-  List<Message> messageList = [
-    Message(title: '余额宝收益到账啦', time: '3小时前', read: true),
-    Message(title: '您的好友收取了您的能量', time: '4小时前', read: true),
-    Message(title: '您的芝麻信用更新了', time: '7小时前', read: true),
-  ];
-
-  updateExpandedHeight(height) {
-    setState(() {
-      expandedHeight = height;
-    });
-  }
-
-  _onScroll(offset) {
-    double alpha = offset / APPBAR_SCROLL_OFFSET;
-    print('_onScroll----$offset&alpha:$alpha ');
-
-    if (alpha < 0) {
-      alpha = 0;
-    } else if (alpha > 1) {
-      alpha = 1;
-    }
-    setState(() {
-      appBarAlpha = alpha;
-      hideTopBar = alpha > 0.2 ? false : true;
-    });
-  }
-
-
-
-  // 初始化
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _scrollController = ScrollController();
+    controller = ScrollController(initialScrollOffset: _offsetY);
+    controller.addListener(() {
+      setState(() {
+      });
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
-    _tabController.dispose();
-    _scrollController.dispose();
+    controller.dispose();
   }
 
+  updateExpandedHeight(height) {
+    print('updateExpandedHeight:$height');
+    setState(() {
+      expandedHeight = height;
+    });
+  }
+
+  changeSecret() {
+    setState(() {
+      secret = !secret;
+    });
+  }
+
+  /// 手指抬起事件
+  _handleUp(pos) {
+    double _scrollY = controller.position.pixels;
+    print(_scrollY==0);
+    if(_scrollY > 0 && _scrollY < _offsetY) {
+      if(_scrollY > 60) {
+        controller.position.animateTo(_offsetY, duration: Duration(milliseconds: 100),curve: Curves.ease);
+      } else {
+        controller.position.animateTo(0, duration: Duration(milliseconds: 100),curve: Curves.ease);
+      }
+    }
+  }
+
+  /// 展示财富细节
+  _handleInfo() {
+    double _scrollY = controller.position.pixels;
+    print('_handleInfo$_scrollY');
+    if(_scrollY == 0) {
+      controller.position.animateTo(_offsetY, duration: Duration(milliseconds: 100),curve: Curves.ease);
+    } else {
+      controller.position.animateTo(_offsetY, duration: Duration(milliseconds: 100),curve: Curves.ease);
+    }
+  }
+  ///
   @override
   Widget build(BuildContext context) {
     double rpx = MediaQuery.of(context).size.width / 750;
-    double appBarHeight =  MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
+
     return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          NotificationListener(
-            onNotification:  (scrollNotification) {
-              if (scrollNotification is ScrollUpdateNotification &&
-                  scrollNotification.depth == 0) {
-                //滚动且是列表滚动的时候
-                _onScroll(scrollNotification.metrics.pixels);
-              }
-              return false;
-            },
-            child: extended.NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                return <Widget>[
-                  SliverAppBar(
-                    pinned: true,
-                    floating: false,
-                    expandedHeight: expandedHeight,
-                    flexibleSpace: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.pin,
-                      background: TopHeaderWithCallback(
-                        updateHeight: updateExpandedHeight,
-                        appBarAlpha: appBarAlpha,
-                      ),
+      body: Listener(
+        onPointerUp: _handleUp,
+        child: CustomScrollView(
+          physics: ClampingScrollPhysics(),
+          controller: controller,
+          slivers: <Widget>[
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: expandedHeight,
+              title: Text('财富'),
+              leading: Icon(
+                PAYICons.ke_fu,
+                color: Colors.white,
+              ),
+              actions: <Widget>[
+                IconButton(
+                    icon: Icon(
+                      Icons.search,
+                      color: Colors.white,
                     ),
-                  ),
-                ];
-              },
-              body: IndexedStack(
-                index: _tabIndex,
-                children: <Widget>[
-                  extended.NestedScrollViewInnerScrollPositionKeyWidget(
-                    Key('Tab0'),
-                    EasyRefresh(
-                      topBouncing: false,
-                      child: ListView.builder(
-                        padding: EdgeInsets.all(0.0),
-                        itemBuilder: (context, index) {
-                          return Container(
-                            color: Colors.red,
-                            child: Column(
-                              children: <Widget>[
-                                _divide(),
-                                _homeMessage(rpx),
-                                _divide(),
-                                _buildSwiper(rpx),
-                                _divide(),
-                                Container(
-                                  height: 500.0,
-                                  color: Colors.white,
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 25 * rpx, vertical: 30 * rpx),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      _buildTitle(rpx, '惠支付'),
-                                      _card(
-                                          child: Container(
-                                            height: 100,
-                                            color: Colors.white,
-                                            child: Text('我是card'),
-                                          )),
-                                      _buildTitle(rpx, '生活服务'),
-                                      _card(
-                                          child: Container(
-                                            height: 100,
-                                            color: Colors.white,
-                                            child: Text('我是card'),
-                                          )),
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          );
-                        },
-                        itemCount: _listCount,
-                      ),
-                      onRefresh: () async {
-                        print('onRefresh-------');
-                        await Future.delayed(Duration(seconds: 2), () {
-                          setState(() {
-                            _listCount = 20;
-                          });
-                        });
-                      },
-                      onLoad: () async {
-                        await Future.delayed(Duration(seconds: 2), () {
-                          setState(() {
-                            _listCount += 10;
-                          });
-                        });
-                      },
-                    ),
-                  ),
-                ],
+                    onPressed: null)
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: TopHeaderCallback(
+                  controller: controller,
+                  updateHeight: updateExpandedHeight,
+                  secret: secret,
+                  changeSecret: changeSecret,
+                  handleInfo: _handleInfo,
+                ),
+                collapseMode: CollapseMode.none,
               ),
             ),
-          ),
-          Opacity(opacity: 1-appBarAlpha, child: SearchBar()),
-          Offstage(
-            offstage: hideTopBar,
-            child: _appBar(appBarHeight, rpx),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _appBar(double appBarHeight, double rpx) {
-    return Opacity(
-      opacity: appBarAlpha,
-      child: Container(
-        height: appBarHeight,
-        width: double.infinity,
-        color: Theme.of(context).accentColor,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            Expanded(
-              flex: 1,
+            SliverToBoxAdapter(
               child: Container(
-                padding: EdgeInsets.only(bottom: 20 * rpx, left: 15 * rpx),
-                child: Row(
+                padding: EdgeInsets.symmetric(vertical: 20*rpx),
+                child: Column(
                   children: <Widget>[
-                    Icon(
-                      PAYICons.scan,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 40 * rpx,
-                    ),
-                    Icon(
-                      PAYICons.fu_kuan,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 40 * rpx,
-                    ),
-                    Icon(PAYICons.shou_kuan,
-                        color: Colors.white, size: 60 * rpx),
-                    SizedBox(
-                      width: 30 * rpx,
-                    ),
-                    Icon(Icons.search, color: Colors.white, size: 50 * rpx),
-                    SizedBox(
-                      width: 30 * rpx,
-                    ),
+                    SizedBox(height: 30*rpx,),
+                    _buildNav(rpx),
+                    SizedBox(height: 30*rpx,),
+                    _buildAd(rpx),
+                    SizedBox(height: 30*rpx,),
+                    _buildTitle(rpx, '财富直通车', '更多'),
+                    SizedBox(height: 30*rpx,),
+                    _buildBanner(rpx),
+                    SizedBox(height: 30*rpx,),
+                    _buildTitle(rpx, '稳健理财', '更多'),
+                    SizedBox(height: 30*rpx,),
+                    _buildCard(rpx),
+                    SizedBox(height: 30*rpx,),
+                    _buildTitle(rpx, '精选投资', ''),
+                    _buildCard(rpx),
+                    _buildFooter(rpx),
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(bottom: 10 * rpx, right: 10 * rpx),
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 60 * rpx,
-              ),
-            )
           ],
         ),
       ),
     );
   }
 
-
-  Widget _divide() {
+  /// 顶部导航
+  Widget _buildNav(double rpx) {
     return Container(
-      width: double.infinity,
-      height: 10,
-      color: Colours.bg_color,
-    );
-  }
-
-  Widget _homeMessage(double rpx) {
-    var length = messageList.length;
-    List<Message> _message = [];
-    var hasNotRead = messageList.where((item) => item.read == false);
-    var notReadLength = hasNotRead.length;
-    if (notReadLength > 0) {
-      var first = hasNotRead.take(1);
-      _message.add(Message(
-          title: '你有${hasNotRead.length}条消息未读',
-          time: messageList[0].time,
-          read: false));
-    } else {
-      _message.addAll(messageList.take(2));
-    }
-    return Container(
-      height: 120 * rpx,
-      padding: EdgeInsets.symmetric(horizontal: 20 * rpx, vertical: 10 * rpx),
-      decoration: BoxDecoration(color: Colors.white),
+      padding: EdgeInsets.symmetric(horizontal: 20*rpx),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Expanded(
-            flex: 1,
-            child: Row(
-              children: <Widget>[
-                LoadImage('antd'),
-                SizedBox(
-                  width: 10,
-                ),
-                _messages(_message, notReadLength),
-              ],
-            ),
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('余额宝', style: TextStyle(fontSize: 26*rpx),)
+            ],
           ),
-          Container(
-            child: Row(
-              children: <Widget>[
-                notReadLength > 0
-                    ? Container(
-                  height: 30 * rpx,
-                  width: 30 * rpx,
-                  margin: EdgeInsets.only(right: 5 * rpx),
-                  decoration: BoxDecoration(
-                      color: Colours.red,
-                      borderRadius: BorderRadius.circular(15 * rpx)),
-                  child: Center(
-                    child: Text(
-                      notReadLength.toString(),
-                      style: TextStyle(
-                          color: Colors.white, fontSize: 25 * rpx),
-                    ),
-                  ),
-                )
-                    : Container(),
-                Images.arrowRight
-              ],
-            ),
-          )
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('理财', style: TextStyle(fontSize: 26*rpx),)
+            ],
+          ),
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('基金', style: TextStyle(fontSize: 26*rpx),)
+            ],
+          ),
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('黄金', style: TextStyle(fontSize: 26*rpx),)
+            ],
+          ),
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('股票', style: TextStyle(fontSize: 26*rpx),)
+            ],
+          ),
+          Column(
+            children: <Widget>[
+              Icon(PAYICons.yu_e_bao, color: Colours.app_main, size: 50*rpx,),
+              SizedBox(height: 5*rpx,),
+              Text('更多', style: TextStyle(fontSize: 26*rpx),)
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _messages(List<Message> message, int notReadLength) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children:
-      message.map((item) => _messageItem(item, notReadLength)).toList(),
-    );
-  }
-
-  Widget _messageItem(Message message, int notReadLength) {
-    return Row(
-      children: <Widget>[
-        Container(
-          height: 5,
-          width: 5,
-          decoration: BoxDecoration(
-              color: Colors.black, borderRadius: BorderRadius.circular(2.5)),
-        ),
-        SizedBox(
-          width: 10,
-        ),
-        Text(message.title),
-        SizedBox(
-          width: 10,
-        ),
-        Text(
-          message.time,
-          style: TextStyle(
-            color: Colours.text_gray,
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget _buildSwiper(double rpx) {
+  /// 活动图
+  Widget _buildAd(double rpx) {
     return Container(
-      height: 180 * rpx,
-      decoration: BoxDecoration(color: Colors.white),
+      margin: EdgeInsets.symmetric(horizontal: 20*rpx),
+      width: double.infinity,
+      height: 100*rpx,
+      decoration: BoxDecoration(
+        color: Colours.app_main_light,
+        borderRadius: BorderRadius.circular(5*rpx)
+      ),
+      child: LoadImage('ad-2', format: 'jpg', fit: BoxFit.fitWidth,),
+    );
+  }
+
+  /// 轮播图
+  Widget _buildBanner(double rpx) {
+    return Container(
+      height: 330 * rpx,
       child: Swiper(
-        itemCount: 3,
-        itemBuilder: (context, index) {
+        itemBuilder: (BuildContext context, int index) {
           return Container(
-            height: 180 * rpx,
-            child: LoadImage(
-              'ad-${index + 1}',
-              format: 'jpg',
-              fit: BoxFit.fitWidth,
+            width: 600*rpx,
+            height: 300*rpx,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30*rpx),
+              color: Colors.blueAccent,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey[400],
+                  offset: Offset(5.0, 5.0),
+                  blurRadius: 10.0,
+                  spreadRadius: 2.0
+                ),
+
+              ]
             ),
+            margin: EdgeInsets.only(bottom: 30*rpx),
+//            child: Image.network(
+//              "http://via.placeholder.com/288x188",
+//              fit: BoxFit.fill,
+//            ),
           );
         },
-        index: 0,
-        autoplay: true,
+        loop: false,
+        itemCount: 5,
+        viewportFraction: 0.8,
+        scale: 0.9,
         pagination: SwiperCustomPagination(
             builder: (BuildContext context, SwiperPluginConfig config) {
               return Align(
@@ -382,14 +253,11 @@ class WealthPageState extends State<WealthPage>
                     child: _customPagination(config),
                   ));
             }),
-        duration: 1500,
-        onTap: (index) {
-          print('index:$index');
-        },
       ),
     );
   }
 
+  /// 自定义指示器
   Widget _customPagination(SwiperPluginConfig config) {
     List<int> list = List.generate(config.itemCount, (int index) {
       return index;
@@ -400,25 +268,124 @@ class WealthPageState extends State<WealthPage>
         return Container(
           margin: EdgeInsets.only(right: 3),
           width: config.activeIndex == item ? 12 : 5,
-          height: 3,
+          height: 4,
           color:
-          config.activeIndex == item ? Colours.app_main : Colours.bg_color,
+          config.activeIndex == item ? Colours.app_main : Colors.grey,
         );
       }).toList(),
     );
   }
 
-  Widget _buildTitle(double rpx, String title) {
+  /// 标题
+  Widget _buildTitle(double rpx, String title,[String subTitle]) {
     return Container(
-      child: Text(
-        title,
-        style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-            fontSize: 40 * rpx),
+      padding: EdgeInsets.symmetric(horizontal: 20*rpx),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text(
+            title,
+            style: TextStyle(fontSize: 32*rpx, fontWeight: FontWeight.bold),
+          ),
+          subTitle.isEmpty ? Text('') : Text(subTitle, style: TextStyle(fontSize: 24*rpx, color: Colours.text_gray))
+        ],
       ),
     );
   }
+
+  /// 稳健理财
+  Widget _buildCard(double rpx) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20*rpx),
+      child: _card(
+          child: Container(
+            padding: EdgeInsets.all(20*rpx),
+            height: 250*rpx,
+            color: Colors.white,
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: EdgeInsets.only(left: 10*rpx),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(width: .5, color: Colours.bg_color)
+                      )
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text('买卖灵活', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30*rpx),),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('3.38%', style: TextStyle(color: Colours.red, fontSize: 40*rpx),),
+                            Text('近一年收益率', style: TextStyle(color: Colours.text_gray, fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                          ],
+                        ),
+                        Text('建信闲钱佳', style: TextStyle(fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                      ],
+                    ),
+                  )
+                ),
+                Expanded(
+                    flex: 1,
+                    child: Container(
+                      margin: EdgeInsets.only(left: 10*rpx),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              right: BorderSide(width: .5, color: Colours.bg_color)
+                          )
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('买卖灵活', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30*rpx),),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text('3.38%', style: TextStyle(color: Colours.red, fontSize: 40*rpx),),
+                              Text('七日年化', style: TextStyle(color: Colours.text_gray, fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                            ],
+                          ),
+                          Text('长江养老半年享', style: TextStyle(fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                        ],
+                      ),
+                    )
+                ),
+                Expanded(
+                    flex: 1,
+                    child: Container(
+                      margin: EdgeInsets.only(left: 10*rpx),
+                      decoration: BoxDecoration(
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('买卖灵活', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30*rpx),),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text('3.38%', style: TextStyle(color: Colours.red, fontSize: 40*rpx),),
+                              Text('成立以来年化利率最高为', style: TextStyle(color: Colours.text_gray, fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                            ],
+                          ),
+                          Text('国寿安鑫利360天哈哈哈哈', style: TextStyle(fontSize: 24*rpx), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                        ],
+                      ),
+                    )
+                ),
+              ],
+            )
+          )
+      ),
+    );
+  }
+
 
   Widget _card({Widget child}) {
     return Container(
@@ -435,28 +402,294 @@ class WealthPageState extends State<WealthPage>
       child: child,
     );
   }
-}
 
-
-
-class TopHeaderWithCallback extends StatefulWidget {
-  TopHeaderWithCallback(
-      {Key key, @required this.appBarAlpha, @required this.updateHeight});
-
-  final double appBarAlpha;
-  final Function(double) updateHeight;
+  /// 底部
+  Widget _buildFooter(double rpx) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20 *rpx),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                height: .3,
+                width: 200*rpx,
+                color: Colors.grey,
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20*rpx),
+                child: Text('蚂蚁财富',style: TextStyle(fontSize: 30*rpx, color: Colours.text_gray),),
+              ),
+              Container(
+                height: .3,
+                width: 200*rpx,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+          SizedBox(height: 10*rpx,),
+          Text('过往业绩不预计产品未来表现，市场有风险，投资需谨慎 >', style: TextStyle(fontSize: 20*rpx, color: Colours.text_gray),)
+        ],
+      ),
+    );
+  }
 
   @override
-  _TopHeaderWithCallbackState createState() => _TopHeaderWithCallbackState();
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
 
-class _TopHeaderWithCallbackState extends State<TopHeaderWithCallback>
+class TopHeader extends StatefulWidget {
+  TopHeader({Key key, this.controller, this.secret, this.changeSecret, this.handleInfo});
+
+  final ScrollController controller;
+  final bool secret;
+  final VoidCallback changeSecret;
+  final VoidCallback handleInfo;
+
+  @override
+  _TopHeaderState createState() => _TopHeaderState();
+}
+
+class _TopHeaderState extends State<TopHeader> {
+  @override
+  Widget build(BuildContext context) {
+    double marginTop =
+        MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
+    double rpx = MediaQuery.of(context).size.width / 750;
+
+    TextStyle titleStyle = TextStyle(color: Colors.white, fontSize: 26 * rpx);
+    TextStyle contentStyle = TextStyle(color: Colours.app_main_light, fontSize: 24 * rpx);
+    BorderSide borderSide = BorderSide(width: .2, color: Colors.grey[800]);
+    double _offset = max(widget.controller.position.pixels, 0);
+    double _angle = min(_offset / 130, 1);
+    return Container(
+      margin: EdgeInsets.only(top: marginTop),
+      child: Stack(
+        children: <Widget>[
+          Column(
+            children: <Widget>[
+              Container(
+                height: 40,
+                padding: EdgeInsets.only(left: 20 * rpx, right: 20 * rpx),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          '总资产',
+                          style: TextStyle(color: Colours.app_main_light),
+                        ),
+                        SizedBox(width: 20*rpx,),
+                        GestureDetector(
+                          onTap: widget.changeSecret,
+                          child: AnimatedCrossFade(
+                              firstChild: Icon(Icons.remove_red_eye, color: Colors.white,),
+                              secondChild: Icon(Icons.lock_outline, color: Colors.white,),
+                              crossFadeState: widget.secret ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                              duration: Duration(milliseconds: 200)
+                          ),
+                        )
+                      ],
+                    ),
+                    Text(
+                      '昨日收益',
+                      style: TextStyle(color: Colours.app_main_light),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 50,
+                padding: EdgeInsets.only(
+                    right: 20 * rpx, left: 20 * rpx, bottom: 20 * rpx),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      widget.secret ? '****': '123,456.78',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 50 * rpx,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      widget.secret ? '****': '+4.7',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 50 * rpx,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: 70 * rpx,
+                          padding: EdgeInsets.only(left: 20*rpx, right: 10*rpx),
+                          decoration: BoxDecoration(
+                              border: Border(
+                                bottom: borderSide,
+                                top: borderSide,
+                                right: borderSide,
+                              )),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              _buildRow(rpx: rpx, titleStyle: titleStyle, title: '余额宝', content: widget.secret ? '****':  '123,456,789', contentStyle: contentStyle ),
+                              Text(
+                                widget.secret ? '****': '+4.7',
+                                style: titleStyle,
+                              ),
+                            ],
+                          ),
+                        )),
+                    Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: 70 * rpx,
+                          padding: EdgeInsets.only(left: 10*rpx, right: 20*rpx),
+                          decoration: BoxDecoration(
+                              border:
+                              Border(bottom: borderSide, top: borderSide)),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              _buildRow(rpx: rpx, titleStyle: titleStyle, title: '理财', content: widget.secret ? '****': '123,456', contentStyle: contentStyle ),
+                              Text(
+                                '客观别急',
+                                style: titleStyle,
+                              ),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.only(
+                    left: 20 * rpx, top: 25 * rpx, bottom: 25 * rpx),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '我的额度',
+                  style: TextStyle(color: Colours.app_main_light),
+                ),
+              ),
+              Container(
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: 70 * rpx,
+                          padding: EdgeInsets.only(left: 20*rpx, right: 10*rpx),
+                          decoration: BoxDecoration(
+                              border: Border(
+                                  bottom: borderSide,
+                                  top: borderSide,
+                                  right: borderSide)),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child:  Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                _buildRow(rpx: rpx, titleStyle: titleStyle, title: '花呗', content: widget.secret ? '****': '123,456', contentStyle: contentStyle ),
+                              ],
+                            ),
+                          ),
+                        )),
+                    Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: 70 * rpx,
+                          padding: EdgeInsets.only(left: 10*rpx, right: 20*rpx),
+                          decoration: BoxDecoration(
+                              border:
+                              Border(bottom: borderSide, top: borderSide)),
+                          child:  Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              _buildRow(rpx: rpx, titleStyle: titleStyle, title: '备用金', content: widget.secret ? '****': '500', contentStyle: contentStyle ),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20*rpx,)
+            ],
+          ),
+          Positioned(
+            bottom: _offset + 20*rpx ,
+            left: 0,
+            right: 0,
+            child: Container(
+//              color: Colors.redAccent,
+              height: 20 *rpx,
+              child: Transform.rotate(
+                angle: pi * _angle,
+                origin: Offset(0, 10),
+                child: IconButton(
+                  icon: Icon(Icons.keyboard_arrow_up,
+                    color: Colours.app_main_light,),
+                  onPressed: (){
+                    print('click------');
+                    widget.handleInfo();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow({double rpx, TextStyle titleStyle, TextStyle contentStyle, String title, String content}) {
+    return Row(
+      children: <Widget>[
+        Text(
+          title,
+          style: titleStyle,
+        ),
+        SizedBox(width: 10*rpx,),
+        Text(
+          content,
+          style: contentStyle,
+        ),
+      ],
+    );
+  }
+}
+
+class TopHeaderCallback extends StatefulWidget {
+  TopHeaderCallback({Key key, this.updateHeight, this.controller, this.secret, this.changeSecret, this.handleInfo});
+
+  final Function(double) updateHeight;
+  final ScrollController controller;
+  final bool secret;
+  final VoidCallback changeSecret;
+  final VoidCallback handleInfo;
+
+  @override
+  _TopHeaderCallbackState createState() => _TopHeaderCallbackState();
+}
+
+class _TopHeaderCallbackState extends State<TopHeaderCallback>
     with AfterLayoutMixin {
   @override
   Widget build(BuildContext context) {
     return TopHeader(
-      key: widget.key,
-      appBarAlpha: widget.appBarAlpha,
+      controller: widget.controller,
+      secret: widget.secret,
+      changeSecret: widget.changeSecret,
+      handleInfo: widget.handleInfo,
     );
   }
 
@@ -467,246 +700,8 @@ class _TopHeaderWithCallbackState extends State<TopHeaderWithCallback>
     double height =
     box.getMaxIntrinsicHeight(MediaQuery.of(context).size.width);
     print('after----$height');
+
     /// 不知道为啥多出44
     widget.updateHeight(height - 44);
   }
-}
-
-
-class TopHeader extends StatefulWidget {
-  TopHeader({
-    Key key,
-    this.appBarAlpha,
-  });
-
-  final double appBarAlpha;
-
-  @override
-  _TopHeaderState createState() => _TopHeaderState();
-}
-
-class _TopHeaderState extends State<TopHeader> {
-  List<NavItem> navList = [
-    NavItem(title: '转账', icon: PAYICons.zhuan_zhang),
-    NavItem(
-        title: '信用卡还款', icon: PAYICons.bank_card2, iconColor: Colours.yellow),
-    NavItem(title: '充值中心', icon: PAYICons.iphone, iconColor: Colours.yellow),
-    NavItem(title: '余额宝', icon: PAYICons.yu_e_bao, iconColor: Colours.red),
-    NavItem(title: '花呗', icon: PAYICons.hua_bei),
-    NavItem(title: '芝麻信用', icon: PAYICons.xin_yong, iconColor: Colours.green),
-    NavItem(title: '城市服务', icon: PAYICons.city),
-    NavItem(title: '体育服务', icon: PAYICons.sports),
-    NavItem(title: '生活缴费', icon: PAYICons.jiao_fei),
-    NavItem(title: '蚂蚁森林', icon: PAYICons.sen_lin, iconColor: Colours.green),
-    NavItem(title: '我的快递', icon: PAYICons.post, iconColor: Colours.yellow),
-    NavItem(title: '更多', icon: PAYICons.more, iconColor: Colours.green),
-  ];
-
-  List<Message> messageList = [
-    Message(title: '余额宝收益到账啦', time: '3小时前', read: true),
-    Message(title: '您的好友收取了您的能量', time: '4小时前', read: true),
-    Message(title: '您的芝麻信用更新了', time: '7小时前', read: true),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    double rpx = MediaQuery.of(context).size.width / 750;
-//    return Container(
-//      height: 400.0,
-//      color: Colors.red,
-//    );
-    double marginTop =  MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
-    return Container(
-      child: Column(
-        children: <Widget>[
-          Container(
-            margin: EdgeInsets.only(top: marginTop),
-            height: 180 * rpx,
-            color: Colours.app_main,
-            child: _headerMenu(rpx),
-          ),
-          Container(
-            height: 330.0 *rpx,
-            color: Colors.white,
-//            padding: EdgeInsets.symmetric(vertical: 15*rpx),
-            child: Center(
-              child: GridView.count(
-                physics: NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.all(0),
-                shrinkWrap: true,
-                crossAxisCount: 4,
-                crossAxisSpacing: 10.0 * rpx,
-                mainAxisSpacing: 10.0 * rpx,
-                childAspectRatio: 2,
-                children: navList.map((nav){
-                  return getItemContainer(nav);
-                }).toList(),
-              ),
-            ),
-          ),
-//          Expanded(
-//            flex: 1,
-//            child: Container(
-//              padding: EdgeInsets.only(top: 44 *rpx),
-//              color: Colors.white,
-//              child: Center(
-//                child: GridView.count(
-//                  padding: EdgeInsets.all(0),
-//                  shrinkWrap: true,
-//                  crossAxisCount: 4,
-//                  crossAxisSpacing: 10.0 * rpx,
-//                  mainAxisSpacing: 10.0 * rpx,
-//                  childAspectRatio: 2,
-//                  children: navList.map((nav){
-//                    return getItemContainer(nav);
-//                  }).toList(),
-//                ),
-//              ),
-//            ),
-//          ),
-
-        ],
-      ),
-    );
-  }
-
-  Widget _appBar(double navHeight, double rpx) {
-    return Opacity(
-      opacity: widget.appBarAlpha,
-      child: Container(
-        height: navHeight,
-        width: double.infinity,
-        color: Theme.of(context).accentColor,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            Expanded(
-              flex: 1,
-              child: Container(
-                padding: EdgeInsets.only(bottom: 20 * rpx, left: 15 * rpx),
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      PAYICons.scan,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 40 * rpx,
-                    ),
-                    Icon(
-                      PAYICons.fu_kuan,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 40 * rpx,
-                    ),
-                    Icon(PAYICons.shou_kuan,
-                        color: Colors.white, size: 60 * rpx),
-                    SizedBox(
-                      width: 30 * rpx,
-                    ),
-                    Icon(Icons.search, color: Colors.white, size: 50 * rpx),
-                    SizedBox(
-                      width: 30 * rpx,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(bottom: 10 * rpx, right: 10 * rpx),
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 60 * rpx,
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _headerMenu(double rpx) {
-    return Opacity(
-      opacity: 1 - widget.appBarAlpha,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          _headerMenutItem(
-            rpx,
-            '扫一扫',
-            PAYICons.scan,
-          ),
-          _headerMenutItem(rpx, '付钱', PAYICons.fu_kuan),
-          _headerMenutItem(rpx, '收钱', PAYICons.shou_kuan),
-          _headerMenutItem(rpx, '卡包', PAYICons.cards),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerMenutItem(double rpx, String title, IconData icon,
-      [double iconSize]) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(
-          icon,
-          color: Colors.white,
-          size: iconSize ?? 60 * rpx,
-        ),
-        SizedBox(
-          height: 10 * rpx,
-        ),
-        Text(
-          title,
-          style: TextStyle(color: Colors.white, fontSize: 30 * rpx),
-        )
-      ],
-    );
-  }
-
-  Widget getItemContainer(NavItem item) {
-    return Container(
-      child: Column(
-        children: <Widget>[
-          Icon(
-            item.icon,
-            color: item.iconColor,
-          ),
-          SizedBox(
-            height: 5,
-          ),
-          Text(item.title)
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class Message {
-  Message(
-      {Key key,
-        @required this.title,
-        @required this.time,
-        @required this.read});
-  final String title;
-  final String time;
-  final bool read;
-}
-
-class NavItem {
-  NavItem(
-      {Key key,
-        @required this.title,
-        @required this.icon,
-        this.iconColor: Colours.app_main});
-
-  final String title;
-  final IconData icon;
-  final Color iconColor;
 }

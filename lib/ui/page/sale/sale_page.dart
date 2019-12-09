@@ -5,7 +5,6 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:alipay_fluttur/common/style/resources.dart';
 
-/// 二楼示例页面
 class SalePage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
