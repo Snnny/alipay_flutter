@@ -1,4 +1,6 @@
+import 'package:alipay_fluttur/ui/page/address_book.dart';
 import 'package:alipay_fluttur/ui/widgets/load_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -43,7 +45,9 @@ class _FriendsPageState extends State<FriendsPage> {
                   PAYICons.friends,
                   color: Colors.white,
                 ),
-                onPressed: () {}),
+                onPressed: () {
+                  Navigator.of(context).push(CupertinoPageRoute(builder: (context)=> AddressBookPage()));
+                }),
             IconButton(
                 icon: Icon(
                   Icons.add,

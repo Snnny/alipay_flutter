@@ -1,15 +1,22 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:alipay_fluttur/common/utils/utils.dart';
+import 'package:alipay_fluttur/ui/page/address_book.dart';
+import 'package:alipay_fluttur/ui/page/sale/sale_page.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart' as extended;
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
+    as extended;
 import 'package:after_layout/after_layout.dart';
 import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:alipay_fluttur/ui/widgets/load_image.dart';
 import 'package:alipay_fluttur/ui/widgets/search_bar.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:alipay_fluttur/ui/widgets/popup_window.dart';
 
 const APPBAR_SCROLL_OFFSET = 50;
+
 /// NestedScrollView示例页面
 class HomePage extends StatefulWidget {
   @override
@@ -17,12 +24,13 @@ class HomePage extends StatefulWidget {
     return HomePageState();
   }
 }
-class HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
 
+class HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   double expandedHeight = 340;
   double appBarAlpha = 0;
   bool hideTopBar = true;
+
+  GlobalKey _menuKey = GlobalKey();
 
   List<Message> messageList = [
     Message(title: '余额宝收益到账啦', time: '3小时前', read: true),
@@ -38,8 +46,6 @@ class HomePageState extends State<HomePage>
 
   _onScroll(offset) {
     double alpha = offset / APPBAR_SCROLL_OFFSET;
-    print('_onScroll----$offset&alpha:$alpha ');
-
     if (alpha < 0) {
       alpha = 0;
     } else if (alpha > 1) {
@@ -51,8 +57,6 @@ class HomePageState extends State<HomePage>
     });
   }
 
-
-
   // 初始化
   @override
   void initState() {
@@ -60,19 +64,15 @@ class HomePageState extends State<HomePage>
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     double rpx = MediaQuery.of(context).size.width / 750;
-    double appBarHeight =  MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
+    double appBarHeight =
+        MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
     return Scaffold(
       body: Stack(
         children: <Widget>[
           NotificationListener(
-            onNotification:  (scrollNotification) {
+            onNotification: (scrollNotification) {
               if (scrollNotification is ScrollUpdateNotification &&
                   scrollNotification.depth == 0) {
                 //滚动且是列表滚动的时候
@@ -122,22 +122,23 @@ class HomePageState extends State<HomePage>
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 25 * rpx, vertical: 30 * rpx),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: <Widget>[
                                       _buildTitle(rpx, '惠支付'),
                                       _card(
                                           child: Container(
-                                            height: 100,
-                                            color: Colors.white,
-                                            child: Text('我是card'),
-                                          )),
+                                        height: 100,
+                                        color: Colors.white,
+                                        child: Text('我是card'),
+                                      )),
                                       _buildTitle(rpx, '生活服务'),
                                       _card(
                                           child: Container(
-                                            height: 100,
-                                            color: Colors.white,
-                                            child: Text('我是card'),
-                                          )),
+                                        height: 100,
+                                        color: Colors.white,
+                                        child: Text('我是card'),
+                                      )),
                                     ],
                                   ),
                                 )
@@ -150,14 +151,11 @@ class HomePageState extends State<HomePage>
                       onRefresh: () async {
                         print('onRefresh-------');
                         await Future.delayed(Duration(seconds: 2), () {
-                          setState(() {
-                          });
+                          setState(() {});
                         });
                       },
                       onLoad: () async {
-                        await Future.delayed(Duration(seconds: 2), () {
-
-                        });
+                        await Future.delayed(Duration(seconds: 2), () {});
                       },
                     ),
                   ),
@@ -165,7 +163,7 @@ class HomePageState extends State<HomePage>
               ),
             ),
           ),
-          Opacity(opacity: 1-appBarAlpha, child: SearchBar()),
+          Opacity(opacity: 1 - appBarAlpha, child: SearchBar()),
           Offstage(
             offstage: hideTopBar,
             child: _appBar(appBarHeight, rpx),
@@ -219,19 +217,66 @@ class HomePageState extends State<HomePage>
               ),
             ),
             Padding(
-              padding: EdgeInsets.only(bottom: 10 * rpx, right: 10 * rpx),
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 60 * rpx,
-              ),
-            )
+                padding: EdgeInsets.only(bottom: 10 * rpx, right: 10 * rpx),
+                child: IconButton(
+                    key: _menuKey,
+                    icon: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 60 * rpx,
+                    ),
+                    onPressed: () {
+                      print('click~~~~');
+                      _showMenu(_menuKey);
+                    }))
           ],
         ),
       ),
     );
   }
 
+  _showMenu(GlobalKey key) {
+    // 携带key的元素
+    final RenderBox button = key.currentContext.findRenderObject();
+    // 携带key的元素的上下文(root node)
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject();
+    /*
+    * ancestor: 指定对象
+    * 如果传的话，返回的是指定对象的位置，否则返回根节点的位置
+    * */
+    var a = button.localToGlobal(Offset(button.size.width, button.size.height),
+        ancestor: overlay);
+    var b = button.localToGlobal(button.size.bottomLeft(Offset.zero),
+        ancestor: overlay);
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(a, b),
+      Offset.zero & overlay.size,
+    );
+    final Color backgroundColor = MyUtils.getBackgroundColor(context);
+    final Color _iconColor = MyUtils.getDarkColor(context, Colours.dark_text);
+    print('height:${overlay.size.height}');
+    print('popup位置:$position');
+    print('父布局尺寸：${Offset.zero & overlay.size}');
+    print('子尺寸：${Rect.fromPoints(a, b)}');
+    showPopupWindow(
+      context: context,
+      fullWidth: false,
+      isShowBg: true,
+      position: position,
+      elevation: 0.0,
+      child: GestureDetector(
+        child: PopList(
+          width: 120,
+          color: Colors.white,
+          list: [PopItem(title: '扫一扫', icon: Icons.blur_circular),
+          PopItem(title: '扫一扫', icon: Icons.blur_circular),
+          PopItem(title: '扫一扫', icon: Icons.blur_circular),
+          PopItem(title: '扫一扫', icon: Icons.blur_circular),
+          PopItem(title: '扫一扫', icon: Icons.blur_circular),]
+        )
+      ),
+    );
+  }
 
   Widget _divide() {
     return Container(
@@ -279,20 +324,20 @@ class HomePageState extends State<HomePage>
               children: <Widget>[
                 notReadLength > 0
                     ? Container(
-                  height: 30 * rpx,
-                  width: 30 * rpx,
-                  margin: EdgeInsets.only(right: 5 * rpx),
-                  decoration: BoxDecoration(
-                      color: Colours.red,
-                      borderRadius: BorderRadius.circular(15 * rpx)),
-                  child: Center(
-                    child: Text(
-                      notReadLength.toString(),
-                      style: TextStyle(
-                          color: Colors.white, fontSize: 25 * rpx),
-                    ),
-                  ),
-                )
+                        height: 30 * rpx,
+                        width: 30 * rpx,
+                        margin: EdgeInsets.only(right: 5 * rpx),
+                        decoration: BoxDecoration(
+                            color: Colours.red,
+                            borderRadius: BorderRadius.circular(15 * rpx)),
+                        child: Center(
+                          child: Text(
+                            notReadLength.toString(),
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 25 * rpx),
+                          ),
+                        ),
+                      )
                     : Container(),
                 Images.arrowRight
               ],
@@ -308,7 +353,7 @@ class HomePageState extends State<HomePage>
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children:
-      message.map((item) => _messageItem(item, notReadLength)).toList(),
+          message.map((item) => _messageItem(item, notReadLength)).toList(),
     );
   }
 
@@ -358,13 +403,13 @@ class HomePageState extends State<HomePage>
         autoplay: true,
         pagination: SwiperCustomPagination(
             builder: (BuildContext context, SwiperPluginConfig config) {
-              return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 5),
-                    child: _customPagination(config),
-                  ));
-            }),
+          return Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                margin: EdgeInsets.only(bottom: 5),
+                child: _customPagination(config),
+              ));
+        }),
         duration: 1500,
         onTap: (index) {
           print('index:$index');
@@ -385,7 +430,7 @@ class HomePageState extends State<HomePage>
           width: config.activeIndex == item ? 12 : 5,
           height: 3,
           color:
-          config.activeIndex == item ? Colours.app_main : Colours.bg_color,
+              config.activeIndex == item ? Colours.app_main : Colours.bg_color,
         );
       }).toList(),
     );
@@ -424,15 +469,12 @@ class HomePageState extends State<HomePage>
   bool get wantKeepAlive => true;
 }
 
-
-
 class TopHeaderWithCallback extends StatefulWidget {
   TopHeaderWithCallback(
       {Key key, @required this.appBarAlpha, @required this.updateHeight});
 
   final double appBarAlpha;
   final Function(double) updateHeight;
-
   @override
   _TopHeaderWithCallbackState createState() => _TopHeaderWithCallbackState();
 }
@@ -452,13 +494,13 @@ class _TopHeaderWithCallbackState extends State<TopHeaderWithCallback>
     // TODO: implement afterFirstLayout
     RenderBox box = context.findRenderObject();
     double height =
-    box.getMaxIntrinsicHeight(MediaQuery.of(context).size.width);
+        box.getMaxIntrinsicHeight(MediaQuery.of(context).size.width);
     print('after----$height');
+
     /// 不知道为啥多出44
     widget.updateHeight(height - 44);
   }
 }
-
 
 class TopHeader extends StatefulWidget {
   TopHeader({
@@ -502,7 +544,8 @@ class _TopHeaderState extends State<TopHeader> {
 //      height: 400.0,
 //      color: Colors.red,
 //    );
-    double marginTop =  MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
+    double marginTop =
+        MediaQueryData.fromWindow(window).padding.top + kToolbarHeight;
     return Container(
       child: Column(
         children: <Widget>[
@@ -513,7 +556,7 @@ class _TopHeaderState extends State<TopHeader> {
             child: _headerMenu(rpx),
           ),
           Container(
-            height: 330.0 *rpx,
+            height: 330.0 * rpx,
             color: Colors.white,
 //            padding: EdgeInsets.symmetric(vertical: 15*rpx),
             child: Center(
@@ -525,7 +568,7 @@ class _TopHeaderState extends State<TopHeader> {
                 crossAxisSpacing: 10.0 * rpx,
                 mainAxisSpacing: 10.0 * rpx,
                 childAspectRatio: 2,
-                children: navList.map((nav){
+                children: navList.map((nav) {
                   return getItemContainer(nav);
                 }).toList(),
               ),
@@ -551,7 +594,6 @@ class _TopHeaderState extends State<TopHeader> {
 //              ),
 //            ),
 //          ),
-
         ],
       ),
     );
@@ -602,11 +644,14 @@ class _TopHeaderState extends State<TopHeader> {
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 10 * rpx, right: 10 * rpx),
-              child: Icon(
+              child: IconButton(icon: Icon(
                 Icons.add,
                 color: Colors.white,
                 size: 60 * rpx,
-              ),
+              ), onPressed: (){
+//                Navigator.push(context, new CupertinoPageRoute(builder: (context) => widget));
+
+              }),
             )
           ],
         ),
@@ -673,14 +718,12 @@ class _TopHeaderState extends State<TopHeader> {
   }
 }
 
-
-
 class Message {
   Message(
       {Key key,
-        @required this.title,
-        @required this.time,
-        @required this.read});
+      @required this.title,
+      @required this.time,
+      @required this.read});
   final String title;
   final String time;
   final bool read;
@@ -689,9 +732,9 @@ class Message {
 class NavItem {
   NavItem(
       {Key key,
-        @required this.title,
-        @required this.icon,
-        this.iconColor: Colours.app_main});
+      @required this.title,
+      @required this.icon,
+      this.iconColor: Colours.app_main});
 
   final String title;
   final IconData icon;

@@ -1,40 +1,34 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:alipay_fluttur/common/style/resources.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'package:collection/collection.dart';
 
-class SalePage extends StatefulWidget {
+class AddressBookPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    return SalePageState();
+    return AddressBookPageState();
   }
 }
 
-class SalePageState extends State<SalePage> with AfterLayoutMixin{
-  List<PopItem> list = [
-    PopItem(title: '扫一扫', icon: Icons.blur_circular),
-    PopItem(title: '扫一扫', icon: Icons.blur_circular),
-    PopItem(title: '扫一扫', icon: Icons.blur_circular),
-    PopItem(title: '扫一扫', icon: Icons.blur_circular),
-    PopItem(title: '扫一扫', icon: Icons.blur_circular),
-  ];
+class AddressBookPageState extends State<AddressBookPage> with AfterLayoutMixin{
+
   ScrollController controller = ScrollController();
   List<Contact> contacts = List<Contact>();
   List<Map<String, dynamic>> dataMap = List<Map<String, dynamic>>();
   Map<dynamic, List<dynamic>> result;
   Map<int, double> cacheData = Map<int, double>();
   List<String> groupList = List<String>();
-  List<GlobalKey> keyList = List<GlobalKey>();
   GlobalKey stickyKey = GlobalKey();
   double zeroHeight = 0;
   double titleHeight = 35;
 
   @override
   void dispose() {
-    super.dispose();
     controller.dispose();
+    super.dispose();
   }
 
   void initState() {
@@ -66,18 +60,12 @@ class SalePageState extends State<SalePage> with AfterLayoutMixin{
     dataMap.sort((a, b) =>
         a["groupCode"].toString().compareTo(b["groupCode"].toString()));
     result = groupBy(dataMap, (o) => o["groupCode"]);
-    for(var item in groupList) {
-      keyList.add(GlobalKey());
-    }
-    print(result);
-    print(groupList);
-    print('done');
   }
 
   _scrollPos(item) {
     var index = groupList.indexOf(item);
     //  jumpTo 会出现不吸顶bug
-    controller.positions.elementAt(0).animateTo(_computedHeight(item, index), duration: Duration(milliseconds: 100), curve: Curves.ease);
+    controller.position.animateTo(_computedHeight(item, index), duration: Duration(milliseconds: 100), curve: Curves.ease);
 //    controller.positions.elementAt(1).jumpTo(_computedHeight(item, index));
   }
 
@@ -98,7 +86,6 @@ class SalePageState extends State<SalePage> with AfterLayoutMixin{
       }
       cacheData[index] = _height;
     }
-    print('高度》》》》》》$_height');
     return _height;
   }
 
@@ -106,7 +93,6 @@ class SalePageState extends State<SalePage> with AfterLayoutMixin{
   @override
   Widget build(BuildContext context) {
     double rpx = MediaQuery.of(context).size.width / 750;
-    print(keyList);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(icon: Icon(Icons.arrow_back_ios, color: Colours.app_main_light), onPressed: (){
@@ -132,7 +118,6 @@ class SalePageState extends State<SalePage> with AfterLayoutMixin{
             itemBuilder: (BuildContext context, int index) {
               return StickyHeader(
                 header: Container(
-                  key: keyList[index],
                   width: MediaQuery.of(context).size.width,
                   padding: EdgeInsets.only(left: 20 * rpx),
                   height: 35,
@@ -149,117 +134,167 @@ class SalePageState extends State<SalePage> with AfterLayoutMixin{
             },
           ),
           Positioned(
-           child: Align(
-             alignment: Alignment.centerRight,
-             child: Container(
-               margin: EdgeInsets.only(right: 10),
-               width: 20,
-               decoration: BoxDecoration(
-               ),
-               child: Column(
-                 mainAxisAlignment: MainAxisAlignment.center,
-                 children: groupList.map((item){
-                   return GestureDetector(
-                     onTap: (){
-                       _scrollPos(item);
-                     },
-                     child: Container(
-                       padding: EdgeInsets.symmetric(vertical: 5),
-                       child: Text(item, style: TextStyle(fontSize: 18),),
-                     ),
-                   );
-                 }).toList(),
-               ),
-             ),
-           )
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  margin: EdgeInsets.only(right: 10),
+                  width: 20,
+                  decoration: BoxDecoration(
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: groupList.map((item){
+                      return GestureDetector(
+                        onTap: (){
+                          _scrollPos(item);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 5),
+                          child: Text(item, style: TextStyle(fontSize: 18),),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              )
           ),
         ],
       ),
     );
   }
 
-  genUserList(context, controller) {
-    return ListView.builder(
-      shrinkWrap: true,
-      controller: controller,
-      itemCount: groupList.length,
-      itemBuilder: (BuildContext context, int index) {
-        return StickyHeader(
-          header: Container(
-            width: MediaQuery.of(context).size.width,
-            height: 50,
-//            decoration: BoxDecoration(color: Colors.black),
-            child: Text(
-              groupList[index].toString(),
-              style: TextStyle(fontSize: 20),
-            ),
-          ),
-          content:
-              genContentList(result[groupList[index]], context, controller),
-        );
-      },
-    );
-  }
-
   genContentList(List<dynamic> friends, BuildContext context,
       ScrollController controller) {
     double rpx = MediaQuery.of(context).size.width / 750;
+    return Column(
+      children: friends.map((item){
+        return Slidable(
+          actionPane: SlidableDrawerActionPane(),
+          secondaryActions: <Widget>[
+            IconSlideAction(
+              closeOnTap: false, // 点击按钮防止slide关闭
+              iconWidget: Text('备注', style: TextStyle(color: Colors.white, fontSize: 35 *rpx)),
+              color: Colors.grey[400],
+            ),
+          ],
+          child: Container(
+              height: 130 * rpx,
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    padding: EdgeInsets.all(15 * rpx),
+                    width: 100 * rpx,
+                    height: 100 * rpx,
+                    child: CircleAvatar(
+                      backgroundImage: NetworkImage(item["avatarUrl"]),
+                    ),
+                  ),
+                  Container(
+                    width: 450 * rpx,
+                    child: item["desc"].toString().length > 0
+                        ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          child: Text(
+                            item["userName"],
+                            style: TextStyle(fontSize: 32 * rpx),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          child: Text(
+                            item["desc"],
+                            style: TextStyle(color: Colors.grey[500]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    )
+                        : Container(
+                      child: Text(
+                        item["userName"],
+                        style: TextStyle(
+                          fontSize: 32 * rpx,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              )),
+        );
+      }).toList(),
+    );
     return ListView.builder(
       shrinkWrap: true,
       controller: controller,
       itemCount: friends.length,
       itemBuilder: (BuildContext context, int index) {
-        return Container(
-//            decoration: BoxDecoration(color: Color(0xff121319)),
-            height: 130 * rpx,
-            child: Row(
-              children: <Widget>[
-                Container(
-                  padding: EdgeInsets.all(15 * rpx),
-                  width: 100 * rpx,
-                  height: 100 * rpx,
-                  child: CircleAvatar(
-                    backgroundImage: NetworkImage(friends[index]["avatarUrl"]),
+        return  Slidable(
+          actionPane: SlidableDrawerActionPane(),
+          secondaryActions: <Widget>[
+            IconSlideAction(
+              closeOnTap: false, // 点击按钮防止slide关闭
+              iconWidget: Text('备注', style: TextStyle(color: Colors.white, fontSize: 35 *rpx)),
+              color: Colors.grey[400],
+            ),
+          ],
+          child: Container(
+              height: 130 * rpx,
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    padding: EdgeInsets.all(15 * rpx),
+                    width: 100 * rpx,
+                    height: 100 * rpx,
+                    child: CircleAvatar(
+                      backgroundImage: NetworkImage(friends[index]["avatarUrl"]),
+                    ),
                   ),
-                ),
-                Container(
-                  width: 450 * rpx,
-                  child: friends[index]["desc"].toString().length > 0
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Container(
-                              child: Text(
-                                friends[index]["userName"],
-                                style: TextStyle(fontSize: 32 * rpx),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Container(
-                              child: Text(
-                                friends[index]["desc"],
-                                style: TextStyle(color: Colors.grey[500]),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Container(
+                  Container(
+                    width: 450 * rpx,
+                    child: friends[index]["desc"].toString().length > 0
+                        ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
                           child: Text(
                             friends[index]["userName"],
-                            style: TextStyle(
-                              fontSize: 32 * rpx,
-                            ),
+                            style: TextStyle(fontSize: 32 * rpx),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                ),
-              ],
-            ));
+                        Container(
+                          child: Text(
+                            friends[index]["desc"],
+                            style: TextStyle(color: Colors.grey[500]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    )
+                        : Container(
+                      child: Text(
+                        friends[index]["userName"],
+                        style: TextStyle(
+                          fontSize: 32 * rpx,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              )),
+        );
       },
     );
   }
@@ -305,87 +340,7 @@ class MyPainer extends CustomPainter {
   }
 }
 
-class PopItem {
-  PopItem({Key key, this.title, this.icon, this.onTap});
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-}
 
-class PopList extends StatelessWidget {
-  PopList({Key key, this.list, this.width, this.color});
-  final List<Object> list;
-  final double width;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      color: Colors.transparent,
-      child: Stack(
-        children: <Widget>[
-          Container(
-            margin: EdgeInsets.only(top: 10),
-            width: width,
-            child: Column(
-                children: list.asMap().keys.map((index) {
-              return _buildItem(list[index], index);
-            }).toList()),
-          ),
-          Positioned(
-            top: 2,
-            right: 30,
-            child: CustomPaint(
-              painter: MyPainer(width: 12, height: 8, color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildItem(PopItem item, int index) {
-    BorderRadius borderRadius;
-    if (index == 0) {
-      borderRadius = BorderRadius.only(
-          topLeft: Radius.circular(8.0), topRight: Radius.circular(8.0));
-    } else if (index == list.length - 1) {
-      borderRadius = BorderRadius.only(
-          bottomRight: Radius.circular(8.0), bottomLeft: Radius.circular(8.0));
-    } else {
-      borderRadius = BorderRadius.only();
-    }
-    return SizedBox(
-      width: width,
-      height: 40,
-      child: Column(
-        children: <Widget>[
-          Container(
-            height: 39,
-            padding: EdgeInsets.only(left: 5),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: borderRadius,
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(item.icon),
-                SizedBox(
-                  width: 3,
-                ),
-                Text(item.title)
-              ],
-            ),
-          ),
-          index == list.length - 1
-              ? Container()
-              : Container(width: width, height: 0.6, color: Colours.line),
-        ],
-      ),
-    );
-  }
-}
 
 class Contact {
   String avatarUrl;
@@ -411,9 +366,9 @@ List data = [
     "name": "记忆",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-0aa271fdadb3130a549af500c4d4569a_is.jpg",
+    "https://pic1.zhimg.com/v2-0aa271fdadb3130a549af500c4d4569a_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-0aa271fdadb3130a549af500c4d4569a_{size}.jpg",
+    "https://pic1.zhimg.com/v2-0aa271fdadb3130a549af500c4d4569a_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/ji-yi-85-34",
@@ -435,9 +390,9 @@ List data = [
     "name": "Leyls",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-d2f3715564b0b40a8dafbfdec3803f97_is.jpg",
+    "https://pic2.zhimg.com/v2-d2f3715564b0b40a8dafbfdec3803f97_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-d2f3715564b0b40a8dafbfdec3803f97_{size}.jpg",
+    "https://pic2.zhimg.com/v2-d2f3715564b0b40a8dafbfdec3803f97_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/leyls-50",
@@ -481,9 +436,9 @@ List data = [
     "name": "Maybe",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-0edac6fcc7bf69f6da105fe63268b84c_is.jpg",
+    "https://pic4.zhimg.com/v2-0edac6fcc7bf69f6da105fe63268b84c_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-0edac6fcc7bf69f6da105fe63268b84c_{size}.jpg",
+    "https://pic4.zhimg.com/v2-0edac6fcc7bf69f6da105fe63268b84c_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/maybe-15-63",
@@ -505,9 +460,9 @@ List data = [
     "name": "嘟唧",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-bd46162e4c96d4046ec27a7cf48536cb_is.jpg",
+    "https://pic2.zhimg.com/v2-bd46162e4c96d4046ec27a7cf48536cb_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-bd46162e4c96d4046ec27a7cf48536cb_{size}.jpg",
+    "https://pic2.zhimg.com/v2-bd46162e4c96d4046ec27a7cf48536cb_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/du-ji-57-59-74",
@@ -529,9 +484,9 @@ List data = [
     "name": "舍予",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-f8c95bf6807a3773eb5679aae2892960_is.jpg",
+    "https://pic1.zhimg.com/v2-f8c95bf6807a3773eb5679aae2892960_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-f8c95bf6807a3773eb5679aae2892960_{size}.jpg",
+    "https://pic1.zhimg.com/v2-f8c95bf6807a3773eb5679aae2892960_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/she-yu-79-9",
@@ -553,9 +508,9 @@ List data = [
     "name": "govern",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-5f8e42cfb17988e013b9bf76153da7be_is.jpg",
+    "https://pic4.zhimg.com/v2-5f8e42cfb17988e013b9bf76153da7be_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-5f8e42cfb17988e013b9bf76153da7be_{size}.jpg",
+    "https://pic4.zhimg.com/v2-5f8e42cfb17988e013b9bf76153da7be_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/govern-89-70",
@@ -577,9 +532,9 @@ List data = [
     "name": "melody",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-8824912d536a4c3185ed0a33453b87c0_is.jpg",
+    "https://pic4.zhimg.com/v2-8824912d536a4c3185ed0a33453b87c0_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-8824912d536a4c3185ed0a33453b87c0_{size}.jpg",
+    "https://pic4.zhimg.com/v2-8824912d536a4c3185ed0a33453b87c0_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/melody-48-78",
@@ -623,9 +578,9 @@ List data = [
     "name": "susu",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-0246f15a0edea34ad0fa426cef107cca_is.jpg",
+    "https://pic1.zhimg.com/v2-0246f15a0edea34ad0fa426cef107cca_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-0246f15a0edea34ad0fa426cef107cca_{size}.jpg",
+    "https://pic1.zhimg.com/v2-0246f15a0edea34ad0fa426cef107cca_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/susu-35-99",
@@ -647,9 +602,9 @@ List data = [
     "name": "安安在这里",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-e76b43292c40d3888d55644c75cb1a9d_is.jpg",
+    "https://pic3.zhimg.com/v2-e76b43292c40d3888d55644c75cb1a9d_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-e76b43292c40d3888d55644c75cb1a9d_{size}.jpg",
+    "https://pic3.zhimg.com/v2-e76b43292c40d3888d55644c75cb1a9d_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/an-an-zai-zhe-li",
@@ -671,9 +626,9 @@ List data = [
     "name": "轩云",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-d2070c612f4a50a2e080361bba9d228a_is.jpg",
+    "https://pic2.zhimg.com/v2-d2070c612f4a50a2e080361bba9d228a_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-d2070c612f4a50a2e080361bba9d228a_{size}.jpg",
+    "https://pic2.zhimg.com/v2-d2070c612f4a50a2e080361bba9d228a_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/xuan-yun-51-6",
@@ -695,9 +650,9 @@ List data = [
     "name": "微风清雨",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-f60459b992aa3df8ecf313db0451c48c_is.jpg",
+    "https://pic4.zhimg.com/v2-f60459b992aa3df8ecf313db0451c48c_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-f60459b992aa3df8ecf313db0451c48c_{size}.jpg",
+    "https://pic4.zhimg.com/v2-f60459b992aa3df8ecf313db0451c48c_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/wei-feng-qing-yu-99",
@@ -719,9 +674,9 @@ List data = [
     "name": "PRESENT",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-ab4e823f1d9610dc2eff629948cdfea6_is.jpg",
+    "https://pic2.zhimg.com/v2-ab4e823f1d9610dc2eff629948cdfea6_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-ab4e823f1d9610dc2eff629948cdfea6_{size}.jpg",
+    "https://pic2.zhimg.com/v2-ab4e823f1d9610dc2eff629948cdfea6_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/present-2-45",
@@ -765,9 +720,9 @@ List data = [
     "name": "阿白",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-b8977fa6273c7030bc1e3543feb8a357_is.jpg",
+    "https://pic1.zhimg.com/v2-b8977fa6273c7030bc1e3543feb8a357_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-b8977fa6273c7030bc1e3543feb8a357_{size}.jpg",
+    "https://pic1.zhimg.com/v2-b8977fa6273c7030bc1e3543feb8a357_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/a-bai-7-98",
@@ -789,9 +744,9 @@ List data = [
     "name": "玩具工厂",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-e68a91273a85aad4d8710cfc31e4d3fa_is.jpg",
+    "https://pic1.zhimg.com/v2-e68a91273a85aad4d8710cfc31e4d3fa_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-e68a91273a85aad4d8710cfc31e4d3fa_{size}.jpg",
+    "https://pic1.zhimg.com/v2-e68a91273a85aad4d8710cfc31e4d3fa_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/wan-ju-gong-han",
@@ -813,9 +768,9 @@ List data = [
     "name": "阿军",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-5a90429e867a3fe4357524434580c635_is.jpg",
+    "https://pic4.zhimg.com/v2-5a90429e867a3fe4357524434580c635_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-5a90429e867a3fe4357524434580c635_{size}.jpg",
+    "https://pic4.zhimg.com/v2-5a90429e867a3fe4357524434580c635_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/a-jun-82-48-57",
@@ -837,9 +792,9 @@ List data = [
     "name": "阿强",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-774b0897493093bd0814aec5e4360657_is.jpg",
+    "https://pic2.zhimg.com/v2-774b0897493093bd0814aec5e4360657_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-774b0897493093bd0814aec5e4360657_{size}.jpg",
+    "https://pic2.zhimg.com/v2-774b0897493093bd0814aec5e4360657_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/a-qiang-15-57-64",
@@ -861,9 +816,9 @@ List data = [
     "name": "轻语",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-74c5a0171ae78c83b7af639ca3947279_is.jpg",
+    "https://pic3.zhimg.com/v2-74c5a0171ae78c83b7af639ca3947279_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-74c5a0171ae78c83b7af639ca3947279_{size}.jpg",
+    "https://pic3.zhimg.com/v2-74c5a0171ae78c83b7af639ca3947279_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/qing-yu-42-55-23",
@@ -885,9 +840,9 @@ List data = [
     "name": "白影",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-c2a2e8a65a8817edc0256c4b8ede334c_is.jpg",
+    "https://pic3.zhimg.com/v2-c2a2e8a65a8817edc0256c4b8ede334c_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-c2a2e8a65a8817edc0256c4b8ede334c_{size}.jpg",
+    "https://pic3.zhimg.com/v2-c2a2e8a65a8817edc0256c4b8ede334c_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/bai-ying-64-30",
@@ -909,9 +864,9 @@ List data = [
     "name": "霜月",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-88be115180f0bd5612b2515e7868fc36_is.jpg",
+    "https://pic4.zhimg.com/v2-88be115180f0bd5612b2515e7868fc36_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-88be115180f0bd5612b2515e7868fc36_{size}.jpg",
+    "https://pic4.zhimg.com/v2-88be115180f0bd5612b2515e7868fc36_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/shuang-yue-68-9",
@@ -955,9 +910,9 @@ List data = [
     "name": "Irishxy",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-349882fdd51865217e50ec786d542257_is.jpg",
+    "https://pic3.zhimg.com/v2-349882fdd51865217e50ec786d542257_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-349882fdd51865217e50ec786d542257_{size}.jpg",
+    "https://pic3.zhimg.com/v2-349882fdd51865217e50ec786d542257_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/irishxy",
@@ -979,9 +934,9 @@ List data = [
     "name": "小安爱火锅",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-a66bf8e0583d29fff640d9cc0f9e7ade_is.jpg",
+    "https://pic2.zhimg.com/v2-a66bf8e0583d29fff640d9cc0f9e7ade_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-a66bf8e0583d29fff640d9cc0f9e7ade_{size}.jpg",
+    "https://pic2.zhimg.com/v2-a66bf8e0583d29fff640d9cc0f9e7ade_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/xiao-an-ai-huo-guo",
@@ -1003,9 +958,9 @@ List data = [
     "name": "弘毅",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/68ffeee3c2f46f0ff97cfc82ddaced39_is.jpg",
+    "https://pic3.zhimg.com/68ffeee3c2f46f0ff97cfc82ddaced39_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/68ffeee3c2f46f0ff97cfc82ddaced39_{size}.jpg",
+    "https://pic3.zhimg.com/68ffeee3c2f46f0ff97cfc82ddaced39_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/hong-yi-xie",
@@ -1027,9 +982,9 @@ List data = [
     "name": "GST",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/78cd328bd22026ad7e5c95b34a484ef8_is.jpg",
+    "https://pic3.zhimg.com/78cd328bd22026ad7e5c95b34a484ef8_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/78cd328bd22026ad7e5c95b34a484ef8_{size}.jpg",
+    "https://pic3.zhimg.com/78cd328bd22026ad7e5c95b34a484ef8_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/gst-62",
@@ -1051,9 +1006,9 @@ List data = [
     "name": "Lanlan",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-743e61568785289cf402f3565334c58b_is.jpg",
+    "https://pic3.zhimg.com/v2-743e61568785289cf402f3565334c58b_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-743e61568785289cf402f3565334c58b_{size}.jpg",
+    "https://pic3.zhimg.com/v2-743e61568785289cf402f3565334c58b_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/lanlan-15-96",
@@ -1075,9 +1030,9 @@ List data = [
     "name": "燃烧的图书馆",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/f45ffc0805e61bf4295c8422f4cdd169_is.jpg",
+    "https://pic4.zhimg.com/f45ffc0805e61bf4295c8422f4cdd169_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/f45ffc0805e61bf4295c8422f4cdd169_{size}.jpg",
+    "https://pic4.zhimg.com/f45ffc0805e61bf4295c8422f4cdd169_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/ran-shao-de-tu-shu-guan",
@@ -1099,9 +1054,9 @@ List data = [
     "name": "七秒钟的记忆",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-f33d1a1fee3bd54c0d44fc0aa8522cd2_is.jpg",
+    "https://pic4.zhimg.com/v2-f33d1a1fee3bd54c0d44fc0aa8522cd2_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-f33d1a1fee3bd54c0d44fc0aa8522cd2_{size}.jpg",
+    "https://pic4.zhimg.com/v2-f33d1a1fee3bd54c0d44fc0aa8522cd2_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/qi-miao-zhong-de-ji-yi-80-1",
@@ -1123,9 +1078,9 @@ List data = [
     "name": "加凯",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic1.zhimg.com/v2-a9bcb9a806731b87414d1aea4669b099_is.jpg",
+    "https://pic1.zhimg.com/v2-a9bcb9a806731b87414d1aea4669b099_is.jpg",
     "avatar_url_template":
-        "https://pic1.zhimg.com/v2-a9bcb9a806731b87414d1aea4669b099_{size}.jpg",
+    "https://pic1.zhimg.com/v2-a9bcb9a806731b87414d1aea4669b099_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/jia-kai-6-30",
@@ -1169,9 +1124,9 @@ List data = [
     "name": "灵动游峰",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-6d1f871ecf2ebbaef30ef4ab7b96a3d0_is.jpg",
+    "https://pic2.zhimg.com/v2-6d1f871ecf2ebbaef30ef4ab7b96a3d0_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-6d1f871ecf2ebbaef30ef4ab7b96a3d0_{size}.jpg",
+    "https://pic2.zhimg.com/v2-6d1f871ecf2ebbaef30ef4ab7b96a3d0_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/ling-dong-you-feng",
@@ -1215,9 +1170,9 @@ List data = [
     "name": "Edward",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic2.zhimg.com/v2-3b757736ac5b92e8ba0d039569a0b08d_is.jpg",
+    "https://pic2.zhimg.com/v2-3b757736ac5b92e8ba0d039569a0b08d_is.jpg",
     "avatar_url_template":
-        "https://pic2.zhimg.com/v2-3b757736ac5b92e8ba0d039569a0b08d_{size}.jpg",
+    "https://pic2.zhimg.com/v2-3b757736ac5b92e8ba0d039569a0b08d_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/edward-47-15",
@@ -1239,9 +1194,9 @@ List data = [
     "name": "曾超",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic3.zhimg.com/v2-550a2af4dc30317194950b6a371192f1_is.jpg",
+    "https://pic3.zhimg.com/v2-550a2af4dc30317194950b6a371192f1_is.jpg",
     "avatar_url_template":
-        "https://pic3.zhimg.com/v2-550a2af4dc30317194950b6a371192f1_{size}.jpg",
+    "https://pic3.zhimg.com/v2-550a2af4dc30317194950b6a371192f1_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/zengchao",
@@ -1307,9 +1262,9 @@ List data = [
     "name": "胡玉国",
     "use_default_avatar": false,
     "avatar_url":
-        "https://pic4.zhimg.com/v2-28e61ae8e1f56afd3f4f943155cd1af3_is.jpg",
+    "https://pic4.zhimg.com/v2-28e61ae8e1f56afd3f4f943155cd1af3_is.jpg",
     "avatar_url_template":
-        "https://pic4.zhimg.com/v2-28e61ae8e1f56afd3f4f943155cd1af3_{size}.jpg",
+    "https://pic4.zhimg.com/v2-28e61ae8e1f56afd3f4f943155cd1af3_{size}.jpg",
     "is_org": false,
     "type": "people",
     "url": "https://www.zhihu.com/people/huyuguo",
@@ -1322,9 +1277,9 @@ List data = [
       "rename_days": "60",
       "vip_icon": {
         "url":
-            "https://pic3.zhimg.com/v2-4812630bc27d642f7cafcd6cdeca3d7a_r.png",
+        "https://pic3.zhimg.com/v2-4812630bc27d642f7cafcd6cdeca3d7a_r.png",
         "night_mode_url":
-            "https://pic3.zhimg.com/v2-c9686ff064ea3579730756ac6c289978_r.png"
+        "https://pic3.zhimg.com/v2-c9686ff064ea3579730756ac6c289978_r.png"
       }
     },
     "badge": [],
